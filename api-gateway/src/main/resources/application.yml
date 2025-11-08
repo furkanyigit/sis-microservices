@@ -1,0 +1,63 @@
+server:
+  port: 8080
+
+spring:
+  application:
+    name: api-gateway
+  cloud:
+    gateway:
+      routes:
+        - id: student-service
+          uri: lb://student-service
+          predicates:
+            - Path=/students/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: studentCircuit
+                fallbackUri: forward:/fallback/student
+
+        - id: course-service
+          uri: lb://course-service
+          predicates:
+            - Path=/courses/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: courseCircuit
+                fallbackUri: forward:/fallback/course
+
+        - id: enrollment-service
+          uri: lb://enrollment-service
+          predicates:
+            - Path=/enrollments/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: enrollmentCircuit
+                fallbackUri: forward:/fallback/enrollment
+
+        - id: notification-service
+          uri: lb://notification-service
+          predicates:
+            - Path=/notifications/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: notificationCircuit
+                fallbackUri: forward:/fallback/notification
+
+        - id: analytics-service
+          uri: lb://analytics-service
+          predicates:
+            - Path=/analytics/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: analyticsCircuit
+                fallbackUri: forward:/fallback/analytics
+
+eureka:
+  client:
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
