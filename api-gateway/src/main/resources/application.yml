@@ -47,6 +47,16 @@ spring:
                 name: notificationCircuit
                 fallbackUri: forward:/fallback/notification
 
+        - id: payment-service
+          uri: lb://payment-service
+          predicates:
+            - Path=/payments/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: paymentCircuit
+                fallbackUri: forward:/fallback/payment
+
         - id: analytics-service
           uri: lb://analytics-service
           predicates:
