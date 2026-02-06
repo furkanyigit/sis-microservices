@@ -1,5 +1,12 @@
 server:
-  port: 8080
+  port: 8222
+
+# --- LOGLAMA AYARLARI (YENİ EKLENDİ) ---
+# Bu kısım Circuit Breaker durum değişikliklerini (Açık/Kapalı) terminale basar.
+logging:
+  level:
+    io.github.resilience4j: DEBUG
+    org.springframework.cloud.circuitbreaker: DEBUG
 
 spring:
   application:
@@ -7,6 +14,7 @@ spring:
   cloud:
     gateway:
       routes:
+        # --- STUDENT SERVICE ---
         - id: student-service
           uri: lb://student-service
           predicates:
@@ -17,6 +25,7 @@ spring:
                 name: studentCircuit
                 fallbackUri: forward:/fallback/student
 
+        # --- COURSE SERVICE ---
         - id: course-service
           uri: lb://course-service
           predicates:
@@ -27,6 +36,7 @@ spring:
                 name: courseCircuit
                 fallbackUri: forward:/fallback/course
 
+        # --- ENROLLMENT SERVICE ---
         - id: enrollment-service
           uri: lb://enrollment-service
           predicates:
@@ -37,6 +47,7 @@ spring:
                 name: enrollmentCircuit
                 fallbackUri: forward:/fallback/enrollment
 
+        # --- NOTIFICATION SERVICE ---
         - id: notification-service
           uri: lb://notification-service
           predicates:
@@ -47,6 +58,7 @@ spring:
                 name: notificationCircuit
                 fallbackUri: forward:/fallback/notification
 
+        # --- PAYMENT SERVICE ---
         - id: payment-service
           uri: lb://payment-service
           predicates:
@@ -57,6 +69,19 @@ spring:
                 name: paymentCircuit
                 fallbackUri: forward:/fallback/payment
 
+        # --- EXAM SERVICE ---
+        - id: exam-service
+          uri: lb://exam-service
+          predicates:
+            - Path=/exams/**
+          filters:
+            - name: CircuitBreaker
+              args:
+                name: examCircuit
+                fallbackUri: forward:/fallback/exam
+
+
+        # --- ANALYTICS SERVICE ---
         - id: analytics-service
           uri: lb://analytics-service
           predicates:
@@ -67,7 +92,50 @@ spring:
                 name: analyticsCircuit
                 fallbackUri: forward:/fallback/analytics
 
+
+# --- EUREKA AYARLARI ---
 eureka:
   client:
     service-url:
       defaultZone: http://localhost:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+
+# --- RESILIENCE4J AYARLARI (SİGORTA KURALLARI) ---
+resilience4j:
+  circuitbreaker:
+    configs:
+      default: # Tüm servisler için geçerli ortak kural
+        registerHealthIndicator: true
+        slidingWindowSize: 10          # Son 10 isteğe bak
+        minimumNumberOfCalls: 5        # Karar vermek için en az 5 istek gelsin
+        permittedNumberOfCallsInHalfOpenState: 3
+        automaticTransitionFromOpenToHalfOpenEnabled: true
+        waitDurationInOpenState: 5s    # Sigorta atarsa 5 saniye bekle
+        failureRateThreshold: 50       # %50 hata olursa kapat
+        eventConsumerBufferSize: 10
+        slowCallDurationThreshold: 500ms
+        slowCallRateThreshold: 50
+    instances:
+      studentCircuit:
+        baseConfig: default
+      courseCircuit:
+        baseConfig: default
+      enrollmentCircuit:
+        baseConfig: default
+      notificationCircuit:
+        baseConfig: default
+      paymentCircuit:
+        baseConfig: default
+      analyticsCircuit:
+        baseConfig: default
+      examCircuit:
+        baseConfig: default
+
+  # Ekstra Güvenlik: Eğer bir servis 2 saniyede hiç cevap vermezse bağlantıyı kes.
+  timelimiter:
+    configs:
+      default:
+        timeoutDuration: 20s

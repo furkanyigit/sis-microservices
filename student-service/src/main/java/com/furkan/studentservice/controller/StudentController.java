@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
+import java.util.Map;
 
 @RestController
 @RequestMapping("/students")
@@ -65,6 +66,14 @@ public class StudentController {
     @GetMapping("/students/ids")
     public List<Long> getAllStudentIds() {
         return studentService.getAllStudentIds();
+    }
+
+    @GetMapping("/{id}/with-grades")
+    public ResponseEntity<Map<String, Object>> getStudentWithGrades(@PathVariable Long id) {
+
+        Map<String, Object> result = studentService.getStudentWithExamResults(id);
+
+        return ResponseEntity.ok(result);
     }
 
     @GetMapping("/pagination")

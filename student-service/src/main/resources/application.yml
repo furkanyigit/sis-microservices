@@ -9,17 +9,15 @@ resilience4j:
         failureRateThreshold: 50
         waitDurationInOpenState: 10s
         permittedNumberOfCallsInHalfOpenState: 3
+        slowCallDurationThreshold: 150ms  # 100ms üstünü yavaş say
+        slowCallRateThreshold: 50         # %50'si yavaşsa devreyi kes
 
-      courseService:
-        registerHealthIndicator: true
-        slidingWindowSize: 10
-        minimumNumberOfCalls: 5
-        failureRateThreshold: 50
-        waitDurationInOpenState: 10s
-        permittedNumberOfCallsInHalfOpenState: 3
+logging:
+  level:
+    io.github.resilience4j: DEBUG
 
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,circuitbreakers
+        include: health,info,circuitbreakers,circuitbreakerevents  # <-- BUNU EKLE
