@@ -6,8 +6,28 @@ spring:
     name: eureka-server
 
 eureka:
+  instance:
+    # Docker içinde IP yerine servis ismini (hostname) tercih etmesi için ekliyoruz
+    prefer-ip-address: true
   client:
     register-with-eureka: false
     fetch-registry: false
+    # Eureka'nın kendi adresini de tanımlamak iyi bir pratiktir
+    serviceUrl:
+      defaultZone: http://eureka-server:8761/eureka/
   server:
     enable-self-preservation: false
+
+# --- Actuator & Prometheus ---
+management:
+  endpoints:
+    web:
+      exposure:
+        include: health,info,prometheus
+  endpoint:
+    health:
+      # Detaylı sağlık bilgisini her zaman göster (Grafana için faydalı)
+      show-details: always
+  metrics:
+    tags:
+      application: eureka-server

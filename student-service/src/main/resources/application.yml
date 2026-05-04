@@ -1,23 +1,11 @@
-resilience4j:
-  circuitbreaker:
-    instances:
-      studentServiceCB:
-        registerHealthIndicator: true
-        slidingWindowType: COUNT_BASED
-        slidingWindowSize: 10
-        minimumNumberOfCalls: 5
-        failureRateThreshold: 50
-        waitDurationInOpenState: 10s
-        permittedNumberOfCallsInHalfOpenState: 3
-        slowCallDurationThreshold: 150ms  # 100ms üstünü yavaş say
-        slowCallRateThreshold: 50         # %50'si yavaşsa devreyi kes
-
-logging:
-  level:
-    io.github.resilience4j: DEBUG
-
 management:
   endpoints:
     web:
       exposure:
-        include: health,info,circuitbreakers,circuitbreakerevents  # <-- BUNU EKLE
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: student-service

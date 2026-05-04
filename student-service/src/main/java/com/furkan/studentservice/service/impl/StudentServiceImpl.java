@@ -69,7 +69,6 @@ public class StudentServiceImpl implements StudentService {
 
     // --- GET BY ID ---
     @Override
-    @CircuitBreaker(name = "studentServiceCB", fallbackMethod = "getStudentByIdFallback")
     public StudentDto getStudentById(Long id) {
         Student student = studentRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Student not found with ID: " + id));
@@ -78,7 +77,6 @@ public class StudentServiceImpl implements StudentService {
 
     // --- LIST ALL ---
     @Override
-    @CircuitBreaker(name = "studentServiceCB", fallbackMethod = "getAllStudentsFallback")
     public List<StudentDto> getAllStudents() {
         return studentRepository.findAll()
                 .stream()
@@ -88,7 +86,6 @@ public class StudentServiceImpl implements StudentService {
 
     // --- PAGINATION ---
     @Override
-    @CircuitBreaker(name = "studentServiceCB", fallbackMethod = "paginationStudentsFallback")
     public Page<Student> paginationStudents(Pageable pageable) {
         return studentRepository.findAll(pageable);
     }

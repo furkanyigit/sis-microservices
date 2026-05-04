@@ -1,8 +1,6 @@
 server:
   port: 8222
 
-# --- LOGLAMA AYARLARI (YENİ EKLENDİ) ---
-# Bu kısım Circuit Breaker durum değişikliklerini (Açık/Kapalı) terminale basar.
 logging:
   level:
     io.github.resilience4j: DEBUG
@@ -14,7 +12,6 @@ spring:
   cloud:
     gateway:
       routes:
-        # --- STUDENT SERVICE ---
         - id: student-service
           uri: lb://student-service
           predicates:
@@ -24,8 +21,7 @@ spring:
               args:
                 name: studentCircuit
                 fallbackUri: forward:/fallback/student
-
-        # --- COURSE SERVICE ---
+        # ... (Diğer route tanımların aynı kalabilir, lb:// kullanımı Docker'da Eureka üzerinden çalıştığı için doğrudur) ...
         - id: course-service
           uri: lb://course-service
           predicates:
@@ -35,8 +31,6 @@ spring:
               args:
                 name: courseCircuit
                 fallbackUri: forward:/fallback/course
-
-        # --- ENROLLMENT SERVICE ---
         - id: enrollment-service
           uri: lb://enrollment-service
           predicates:
@@ -46,8 +40,6 @@ spring:
               args:
                 name: enrollmentCircuit
                 fallbackUri: forward:/fallback/enrollment
-
-        # --- NOTIFICATION SERVICE ---
         - id: notification-service
           uri: lb://notification-service
           predicates:
@@ -57,8 +49,6 @@ spring:
               args:
                 name: notificationCircuit
                 fallbackUri: forward:/fallback/notification
-
-        # --- PAYMENT SERVICE ---
         - id: payment-service
           uri: lb://payment-service
           predicates:
@@ -68,8 +58,6 @@ spring:
               args:
                 name: paymentCircuit
                 fallbackUri: forward:/fallback/payment
-
-        # --- EXAM SERVICE ---
         - id: exam-service
           uri: lb://exam-service
           predicates:
@@ -79,9 +67,6 @@ spring:
               args:
                 name: examCircuit
                 fallbackUri: forward:/fallback/exam
-
-
-        # --- ANALYTICS SERVICE ---
         - id: analytics-service
           uri: lb://analytics-service
           predicates:
@@ -92,29 +77,47 @@ spring:
                 name: analyticsCircuit
                 fallbackUri: forward:/fallback/analytics
 
-
 # --- EUREKA AYARLARI ---
 eureka:
   client:
     service-url:
-      defaultZone: http://localhost:8761/eureka/
+      # localhost:8761 -> eureka-server:8761 (Docker servis ismi)
+      defaultZone: http://eureka-server:8761/eureka/
     register-with-eureka: true
     fetch-registry: true
   instance:
     prefer-ip-address: true
 
-# --- RESILIENCE4J AYARLARI (SİGORTA KURALLARI) ---
+# --- ACTUATOR & PROMETHEUS ---
+management:
+  endpoints:
+    web:
+      exposure:
+        # İzleme için health, info ve prometheus açık olmalı
+        include: health,info,prometheus
+  endpoint:
+    health:
+      # Sigorta durumlarını (Circuit Breaker) Grafana'da görmek için 'always' şart
+      show-details: always
+  health:
+    circuitbreakers:
+      enabled: true # Sigorta durumlarını Actuator'e ekler
+  metrics:
+    tags:
+      application: api-gateway
+
+# --- RESILIENCE4J AYARLARI ---
 resilience4j:
   circuitbreaker:
     configs:
-      default: # Tüm servisler için geçerli ortak kural
-        registerHealthIndicator: true
-        slidingWindowSize: 10          # Son 10 isteğe bak
-        minimumNumberOfCalls: 5        # Karar vermek için en az 5 istek gelsin
+      default:
+        registerHealthIndicator: true # Actuator üzerinden izlenebilirlik sağlar
+        slidingWindowSize: 10
+        minimumNumberOfCalls: 5
         permittedNumberOfCallsInHalfOpenState: 3
         automaticTransitionFromOpenToHalfOpenEnabled: true
-        waitDurationInOpenState: 5s    # Sigorta atarsa 5 saniye bekle
-        failureRateThreshold: 50       # %50 hata olursa kapat
+        waitDurationInOpenState: 5s
+        failureRateThreshold: 50
         eventConsumerBufferSize: 10
         slowCallDurationThreshold: 500ms
         slowCallRateThreshold: 50
@@ -134,7 +137,6 @@ resilience4j:
       examCircuit:
         baseConfig: default
 
-  # Ekstra Güvenlik: Eğer bir servis 2 saniyede hiç cevap vermezse bağlantıyı kes.
   timelimiter:
     configs:
       default:

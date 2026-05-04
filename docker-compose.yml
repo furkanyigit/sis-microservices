@@ -5,11 +5,10 @@ services:
   # 1. VERİTABANLARI (INFRASTRUCTURE)
   # ==========================================
 
-  # MySQL (Course, Department, Enrollment, Exam için)
   mysql:
     image: mysql:8.0
     ports:
-      - "3307:3306"  # <-- DİKKAT: Sol tarafı 3307 yaptık (Dış Kapı)
+      - "3307:3306"
     environment:
       MYSQL_ROOT_PASSWORD: 1234
     command: --init-file /data/application/init.sql
@@ -17,7 +16,6 @@ services:
       - ./mysql-init.sql:/data/application/init.sql
       - mysql_data:/var/lib/mysql
 
-  # PostgreSQL (Student, Payment için)
   postgres:
     image: postgres:15
     ports:
@@ -25,13 +23,11 @@ services:
     environment:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: 1234
-      # Postgres varsayılan olarak 1 DB oluşturur, diğerini script ile yapacağız
       POSTGRES_DB: studentdb
     volumes:
       - ./postgres-init.sql:/docker-entrypoint-initdb.d/init.sql
       - postgres_data:/var/lib/postgresql/data
 
-  # MongoDB (Notification için)
   mongo:
     image: mongo:latest
     ports:
@@ -81,11 +77,10 @@ services:
       - eureka-server
       - postgres
     environment:
-      # Localhost yerine 'postgres' yazıyoruz (Docker Service Name)
       - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/studentdb?charSet=UTF8
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
-      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=*  # Bütün Actuator sayfalarını açar (Tırnak Önemli!)
-      - MANAGEMENT_HEALTH_CIRCUITBREAKERS_ENABLED=true  # Devre kesici durumunu sağlık raporuna ekler
+      - MANAGEMENT_ENDPOINTS_WEB_EXPOSURE_INCLUDE=*
+      - MANAGEMENT_HEALTH_CIRCUITBREAKERS_ENABLED=true
       - MANAGEMENT_ENDPOINT_HEALTH_SHOW_DETAILS=always
 
   course-service:
@@ -96,7 +91,6 @@ services:
       - eureka-server
       - mysql
     environment:
-      # Localhost yerine 'mysql' yazıyoruz
       - SPRING_DATASOURCE_URL=jdbc:mysql://mysql:3306/coursedb?allowPublicKeyRetrieval=true&useSSL=false&createDatabaseIfNotExist=true
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
 
@@ -120,7 +114,6 @@ services:
       - eureka-server
       - mongo
     environment:
-      # Localhost yerine 'mongo' yazıyoruz
       - SPRING_DATA_MONGODB_URI=mongodb://mongo:27017/notificationdb
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
 
@@ -138,7 +131,7 @@ services:
   payment-service:
     build: ./payment-service
     ports:
-      - "8087:8087"  # GÜNCELLENDİ: Artık 8087 portunda çalışacak
+      - "8087:8087"
     depends_on:
       - eureka-server
       - postgres
@@ -163,6 +156,28 @@ services:
       - eureka-server
     environment:
       - EUREKA_CLIENT_SERVICEURL_DEFAULTZONE=http://eureka-server:8761/eureka/
+
+  # ==========================================
+  # 4. MONITORING
+  # ==========================================
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: prometheus
+    ports:
+      - "9090:9090"
+    volumes:
+      - ./prometheus.yml:/etc/prometheus/prometheus.yml
+
+  grafana:
+    image: grafana/grafana:latest
+    container_name: grafana
+    ports:
+      - "3000:3000"
+    depends_on:
+      - prometheus
+    environment:
+      - GF_SECURITY_ADMIN_USER=admin
+      - GF_SECURITY_ADMIN_PASSWORD=admin
 
 volumes:
   mysql_data:

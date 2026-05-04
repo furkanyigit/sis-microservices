@@ -12,8 +12,26 @@ spring:
         native:
           search-locations: classpath:/configs
 
+# --- Eureka Discovery Client ---
+eureka:
+  client:
+    # localhost:8761 -> eureka-server:8761 (Docker servis ismi)
+    service-url:
+      defaultZone: http://eureka-server:8761/eureka/
+    register-with-eureka: true
+    fetch-registry: true
+  instance:
+    prefer-ip-address: true
+
+# --- Actuator & Prometheus ---
 management:
   endpoints:
     web:
       exposure:
-        include: "*"
+        include: health,info,prometheus
+  endpoint:
+    health:
+      show-details: always
+  metrics:
+    tags:
+      application: config-server

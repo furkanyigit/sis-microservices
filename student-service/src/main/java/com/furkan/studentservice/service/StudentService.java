@@ -12,10 +12,9 @@ public interface StudentService {
     StudentDto createStudent(StudentDto studentDto);
     StudentDto updateStudent(Long id, StudentDto studentDto);
     void deleteStudent(Long id);
-    //StudentDto getStudentById(Long id);
+    StudentDto getStudentById(Long id);
     List<StudentDto> getAllStudents();
     Page<Student> paginationStudents(Pageable pageable);
-    StudentDto getStudentById(Long id);
     List<Long> getAllStudentIds();
     Map<String, Object> getStudentWithExamResults(Long studentId);
 
